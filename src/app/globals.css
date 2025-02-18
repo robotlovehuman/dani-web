@@ -2,20 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Base Theme Colors */
+    --c64-brown: #8b5e34;
+    --c64-tan: #d4b483;
+    --c64-light: #e6ccb2;
+    --c64-dark: #3b2417;
+    --c64-secondary: #346b8b;
+
+    /* Status Colors */
+    --status-success: #5a7152;
+    --status-fail: #8b3434;
+  }
+  
+  body {
+    font-family: monospace;
+    background-color: var(--c64-light);
+    color: var(--c64-dark);
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .retro-panel {
+    @apply border-2 border-[var(--c64-brown)] bg-[var(--c64-tan)] p-4 rounded;
+    box-shadow: 4px 4px 0 var(--c64-dark);
+  }
+
+  .retro-button {
+    @apply px-4 py-2 bg-[var(--c64-brown)] text-[var(--c64-light)] 
+           hover:bg-[var(--c64-dark)] transition-colors duration-200
+           border-2 border-[var(--c64-dark)] font-bold;
+  }
+
+  .nav-item {
+    @apply w-full text-left px-4 py-2 hover:bg-[var(--c64-brown)] 
+           hover:text-[var(--c64-light)] transition-colors duration-200;
+  }
 }

@@ -14,13 +14,64 @@ export default function ChatUI() {
     { id: 1, text: "Welcome to RetroChat!", sent: false }
   ]);
   const [newMessage, setNewMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const sendMessage = (e: React.FormEvent) => {
+  const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || isLoading) return;
     
-    setMessages(prev => [...prev, { id: Date.now(), text: newMessage, sent: true }]);
+    const userMessage = { id: Date.now(), text: newMessage, sent: true };
+    setMessages(prev => [...prev, userMessage]);
     setNewMessage('');
+    setIsLoading(true);
+
+    // Create a placeholder for the assistant's message
+    const assistantMessageId = Date.now() + 1;
+    setMessages(prev => [...prev, {
+      id: assistantMessageId,
+      text: '',
+      sent: false
+    }]);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          messages: [{ role: 'user', content: newMessage }]
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to get response');
+      
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No reader available');
+
+      // Read the stream
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        // Convert the chunk to text
+        const text = new TextDecoder().decode(value);
+        
+        // Update the assistant's message
+        setMessages(prev => prev.map(msg => 
+          msg.id === assistantMessageId
+            ? { ...msg, text: msg.text + text }
+            : msg
+        ));
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages(prev => prev.map(msg => 
+        msg.id === assistantMessageId
+          ? { ...msg, text: "Sorry, I couldn't process that message." }
+          : msg
+      ));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -48,8 +99,13 @@ export default function ChatUI() {
               onChange={(e) => setNewMessage(e.target.value)}
               className="flex-1 p-2 bg-[var(--c64-light)] border-2 border-[var(--c64-brown)] rounded"
               placeholder="Type your message..."
+              disabled={isLoading}
             />
-            <button type="submit" className="retro-button">
+            <button 
+              type="submit" 
+              className="retro-button"
+              disabled={isLoading}
+            >
               <Send className="w-5 h-5" />
             </button>
           </form>
